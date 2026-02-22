@@ -1,0 +1,20 @@
+{
+    "appId": "me.sajidkhan.sajidai",
+    "appName": "Sajid AI",
+    "webDir": "www",
+    "server": {
+        "androidScheme": "https"
+    },
+    "android": {
+        "allowMixedContent": true,
+        "captureInput": true,
+        "webContentsDebuggingEnabled": false
+    },
+    "plugins": {
+        "SplashScreen": {
+            "launchShowDuration": 2000,
+            "backgroundColor": "#0a0c14",
+            "showSpinner": false
+        }
+    }
+}
