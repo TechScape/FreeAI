@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claude AI Chat – Powered by AI</title>
+  <meta name="description"
+    content="A free, unlimited Claude AI chat platform powered by TechScape. No API keys needed." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://js.puter.com/v2/"></script>
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0a0c14;
+      --surface: #111525;
+      --surface2: #161b2e;
+      --border: rgba(255, 255, 255, 0.07);
+      --accent: #7c5cf6;
+      --accent2: #56cfb2;
+      --text: #e8eaf2;
+      --text-muted: #8890aa;
+      --user-bubble: linear-gradient(135deg, #7c5cf6 0%, #9d7ef8 100%);
+      --ai-bubble: #161b2e;
+      --radius: 18px;
+      --input-h: 56px;
+    }
+
+    html,
+    body {
+      height: 100%;
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* ── Layout ── */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px 14px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10, 12, 20, 0.92);
+      backdrop-filter: blur(12px);
+      position: relative;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #7c5cf6, #56cfb2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 0 20px rgba(124, 92, 246, 0.4);
+      animation: logoPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes logoPulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 20px rgba(124, 92, 246, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 0 35px rgba(86, 207, 178, 0.5);
+      }
+    }
+
+    .brand-text h1 {
+      font-size: 17px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #a78bfa, #56cfb2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    /* Model selector */
+    .model-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .model-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    select#model-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 30px 6px 12px;
+      border-radius: 8px;
+      appearance: none;
+      cursor: pointer;
+      outline: none;
+      transition: border-color .2s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238890aa' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    select#model-select:hover {
+      border-color: var(--accent);
+    }
+
+    /* Clear btn */
+    #clear-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .2s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    #clear-btn:hover {
+      border-color: #ef4444;
+      color: #ef4444;
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    /* ── Messages ── */
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      scroll-behavior: smooth;
+    }
+
+    #messages::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    #messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    #messages::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    /* Welcome state */
+    .welcome {
+      margin: auto;
+      text-align: center;
+      max-width: 420px;
+      animation: fadeUp .5s ease;
+    }
+
+    .welcome-icon {
+      font-size: 52px;
+      margin-bottom: 20px;
+      display: block;
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-8px);
+      }
+    }
+
+    .welcome h2 {
+      font-size: 24px;
+      font-weight: 700;
+      background: linear-gradient(90deg, #a78bfa, #56cfb2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+
+    .welcome p {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 24px;
+    }
+
+    .suggestion-chip {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .suggestion-chip:hover {
+      border-color: var(--accent);
+      background: rgba(124, 92, 246, 0.12);
+      transform: translateY(-1px);
+    }
+
+    /* Message rows */
+    .msg-row {
+      display: flex;
+      gap: 12px;
+      animation: fadeUp .3s ease;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .msg-row.user {
+      flex-direction: row-reverse;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+
+    .avatar.user-av {
+      background: linear-gradient(135deg, #7c5cf6, #9d7ef8);
+      box-shadow: 0 0 12px rgba(124, 92, 246, 0.4);
+    }
+
+    .avatar.ai-av {
+      background: linear-gradient(135deg, #1e2542, #2a3566);
+      border: 1px solid var(--border);
+    }
+
+    .bubble {
+      max-width: 72%;
+      padding: 13px 17px;
+      border-radius: var(--radius);
+      font-size: 14.5px;
+      line-height: 1.65;
+      position: relative;
+    }
+
+    .msg-row.user .bubble {
+      background: var(--user-bubble);
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 20px rgba(124, 92, 246, 0.25);
+    }
+
+    .msg-row.ai .bubble {
+      background: var(--ai-bubble);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Typing indicator */
+    .typing-dots {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      padding: 4px 0;
+    }
+
+    .typing-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent2);
+      animation: blink 1.2s infinite;
+    }
+
+    .typing-dots span:nth-child(2) {
+      animation-delay: .2s;
+    }
+
+    .typing-dots span:nth-child(3) {
+      animation-delay: .4s;
+    }
+
+    @keyframes blink {
+
+      0%,
+      80%,
+      100% {
+        transform: scale(.7);
+        opacity: .4;
+      }
+
+      40% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Code blocks inside AI bubbles */
+    .bubble pre {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin: 8px 0;
+      overflow-x: auto;
+      font-size: 13px;
+    }
+
+    .bubble code {
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 13px;
+      background: rgba(124, 92, 246, 0.18);
+      border-radius: 4px;
+      padding: 1px 5px;
+    }
+
+    .bubble pre code {
+      background: transparent;
+      padding: 0;
+    }
+
+    /* ── Input bar ── */
+    .input-bar {
+      padding: 16px 24px 20px;
+      border-top: 1px solid var(--border);
+      background: rgba(10, 12, 20, 0.94);
+      backdrop-filter: blur(12px);
+      flex-shrink: 0;
+    }
+
+    .input-wrap {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 10px 14px 10px 18px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+
+    .input-wrap:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124, 92, 246, 0.12);
+    }
+
+    #user-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 14.5px;
+      line-height: 1.5;
+      resize: none;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    #user-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    #send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #7c5cf6, #56cfb2);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all .2s;
+      box-shadow: 0 4px 14px rgba(124, 92, 246, 0.35);
+    }
+
+    #send-btn:hover:not(:disabled) {
+      transform: scale(1.08);
+      box-shadow: 0 6px 20px rgba(124, 92, 246, 0.5);
+    }
+
+    #send-btn:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    #send-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: #fff;
+    }
+
+    .input-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      padding: 0 4px;
+    }
+
+    .input-hint {
+      font-size: 11px;
+      color: rgba(136, 144, 170, 0.6);
+    }
+
+    .powered-by {
+      font-size: 11px;
+      color: rgba(136, 144, 170, 0.5);
+    }
+
+    .powered-by span {
+      color: var(--accent2);
+      font-weight: 600;
+    }
+
+    .credits {
+      font-size: 11px;
+      color: rgba(136, 144, 170, 0.45);
+    }
+
+    .credits a {
+      color: var(--accent2);
+      font-weight: 600;
+      text-decoration: none;
+      transition: opacity .2s;
+    }
+
+    .credits a:hover {
+      opacity: 0.75;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      header {
+        padding: 14px 16px;
+      }
+
+      #messages {
+        padding: 20px 16px;
+      }
+
+      .input-bar {
+        padding: 12px 16px 16px;
+      }
+
+      .bubble {
+        max-width: 88%;
+        font-size: 14px;
+      }
+
+      .brand-text h1 {
+        font-size: 15px;
+      }
+
+      .model-label {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="logo">✦</div>
+        <div class="brand-text">
+          <h1>Claude AI Chat</h1>
+          <p>Powered by TechScape AI &amp; Unlimited</p>
+        </div>
+      </div>
+      <div class="model-wrap">
+        <span class="model-label">Model:</span>
+        <select id="model-select">
+          <option value="claude-sonnet-4-5" selected>Claude Sonnet 4.5</option>
+          <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+          <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
+          <option value="claude-opus-4-5">Claude Opus 4.5</option>
+          <option value="claude-opus-4-6">Claude Opus 4.6</option>
+        </select>
+        <button id="clear-btn" title="Clear conversation">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+            <path
+              d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z" />
+            <path
+              d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z" />
+          </svg>
+          Clear
+        </button>
+      </div>
+    </header>
+
+    <!-- Messages -->
+    <div id="messages">
+      <div class="welcome" id="welcome">
+        <span class="welcome-icon">✦</span>
+        <h2>Hello! I'm Claude</h2>
+        <p>Ask me anything — from answering questions and writing code to brainstorming ideas and creative tasks.</p>
+        <div class="suggestions">
+          <div class="suggestion-chip" data-prompt="Explain quantum computing in simple terms">⚛️ Explain quantum
+            computing</div>
+          <div class="suggestion-chip"
+            data-prompt="Write a Python function to find the nth Fibonacci number recursively">🐍 Python Fibonacci
+            function</div>
+          <div class="suggestion-chip" data-prompt="What are the top 5 productivity tips for software developers?">💡
+            Developer productivity tips</div>
+          <div class="suggestion-chip" data-prompt="Write a short poem about the beauty of mathematics">✍️ Poem about
+            maths</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input bar -->
+    <div class="input-bar">
+      <div class="input-wrap">
+        <textarea id="user-input" rows="1" placeholder="Ask me anything…" autocomplete="off"></textarea>
+        <button id="send-btn" title="Send message">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z" />
+          </svg>
+        </button>
+      </div>
+      <div class="input-footer">
+        <span class="input-hint">Enter to send · Shift+Enter for new line</span>
+        <span class="credits">Built by <a href="https://sajidkhan.me" target="_blank" rel="noopener">Sajid
+            Khan</a></span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const messagesEl = document.getElementById('messages');
+    const inputEl = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const modelSelect = document.getElementById('model-select');
+    const clearBtn = document.getElementById('clear-btn');
+    const welcomeEl = document.getElementById('welcome');
+
+    // ── Conversation history for context ──────────────────────────────────────
+    let history = [];
+    let isStreaming = false;
+
+    // ── Auto-resize textarea ──────────────────────────────────────────────────
+    inputEl.addEventListener('input', () => {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 160) + 'px';
+    });
+
+    // ── Send on Enter (no shift) ──────────────────────────────────────────────
+    inputEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    });
+
+    sendBtn.addEventListener('click', handleSend);
+
+    // ── Suggestion chips ──────────────────────────────────────────────────────
+    document.querySelectorAll('.suggestion-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        inputEl.value = chip.dataset.prompt;
+        inputEl.style.height = 'auto';
+        handleSend();
+      });
+    });
+
+    // ── Clear conversation ────────────────────────────────────────────────────
+    clearBtn.addEventListener('click', () => {
+      if (isStreaming) return;
+      history = [];
+      // Remove all message rows, show welcome again
+      [...messagesEl.children].forEach(el => {
+        if (!el.classList.contains('welcome')) el.remove();
+      });
+      welcomeEl.style.display = '';
+    });
+
+    // ── Core: send message ────────────────────────────────────────────────────
+    async function handleSend() {
+      const text = inputEl.value.trim();
+      if (!text || isStreaming) return;
+
+      hideWelcome();
+
+      // Render user bubble
+      appendMessage('user', text);
+      history.push({ role: 'user', content: text });
+
+      // Reset input
+      inputEl.value = '';
+      inputEl.style.height = 'auto';
+
+      // Show typing indicator
+      const typingRow = createTypingIndicator();
+      messagesEl.appendChild(typingRow);
+      scrollBottom();
+
+      isStreaming = true;
+      sendBtn.disabled = true;
+
+      const model = modelSelect.value;
+      let fullReply = '';
+
+      try {
+        // Build the prompt with history for context
+        const prompt = buildPrompt(history);
+
+        const stream = await puter.ai.chat(prompt, { model, stream: true });
+
+        // Replace typing indicator with real AI bubble
+        typingRow.remove();
+        const { row, contentEl } = createAIBubble();
+        messagesEl.appendChild(row);
+
+        for await (const part of stream) {
+          const chunk = part?.text ?? '';
+          fullReply += chunk;
+          contentEl.innerHTML = renderMarkdown(fullReply);
+          scrollBottom();
+        }
+
+        history.push({ role: 'assistant', content: fullReply });
+
+      } catch (err) {
+        typingRow.remove();
+        appendMessage('ai', `⚠️ Error: ${err.message || 'Something went wrong. Please try again.'}`);
+        console.error(err);
+      } finally {
+        isStreaming = false;
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    // ── Build prompt string with history ─────────────────────────────────────
+    function buildPrompt(history) {
+      if (history.length === 1) return history[0].content;
+      return history.map(m => `${m.role === 'user' ? 'Human' : 'Assistant'}: ${m.content}`).join('\n\n') + '\n\nAssistant:';
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    function hideWelcome() {
+      if (welcomeEl) welcomeEl.style.display = 'none';
+    }
+
+    function scrollBottom() {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function appendMessage(role, text) {
+      const row = document.createElement('div');
+      row.className = `msg-row ${role}`;
+
+      const av = document.createElement('div');
+      av.className = `avatar ${role === 'user' ? 'user-av' : 'ai-av'}`;
+      av.textContent = role === 'user' ? '👤' : '✦';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.innerHTML = renderMarkdown(text);
+
+      if (role === 'user') {
+        row.appendChild(bubble);
+        row.appendChild(av);
+      } else {
+        row.appendChild(av);
+        row.appendChild(bubble);
+      }
+
+      messagesEl.appendChild(row);
+      scrollBottom();
+      return row;
+    }
+
+    function createAIBubble() {
+      const row = document.createElement('div');
+      row.className = 'msg-row ai';
+
+      const av = document.createElement('div');
+      av.className = 'avatar ai-av';
+      av.textContent = '✦';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+
+      row.appendChild(av);
+      row.appendChild(bubble);
+
+      return { row, contentEl: bubble };
+    }
+
+    function createTypingIndicator() {
+      const row = document.createElement('div');
+      row.className = 'msg-row ai';
+
+      const av = document.createElement('div');
+      av.className = 'avatar ai-av';
+      av.textContent = '✦';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.innerHTML = `<div class="typing-dots"><span></span><span></span><span></span></div>`;
+
+      row.appendChild(av);
+      row.appendChild(bubble);
+      return row;
+    }
+
+    // ── Lightweight Markdown renderer ─────────────────────────────────────────
+    function renderMarkdown(text) {
+      // Escape HTML first for safety
+      let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+      // Fenced code blocks
+      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) =>
+        `<pre><code>${code.trim()}</code></pre>`
+      );
+
+      // Inline code
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+      // Bold
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+      // Italic
+      html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+      // Headings
+      html = html.replace(/^### (.+)$/gm, '<h4 style="margin:10px 0 4px;font-size:14px;color:var(--accent2)">$1</h4>');
+      html = html.replace(/^## (.+)$/gm, '<h3 style="margin:12px 0 5px;font-size:15px;color:var(--accent2)">$1</h3>');
+      html = html.replace(/^# (.+)$/gm, '<h2 style="margin:14px 0 6px;font-size:16px;color:var(--accent2)">$1</h2>');
+
+      // Unordered lists (simple)
+      html = html.replace(/^\s*[-*] (.+)$/gm, '<li style="margin:3px 0;padding-left:4px">$1</li>');
+      html = html.replace(/(<li.*<\/li>)/s, '<ul style="margin:6px 0;padding-left:18px">$1</ul>');
+
+      // Numbered lists
+      html = html.replace(/^\s*\d+\. (.+)$/gm, '<li style="margin:3px 0;padding-left:4px">$1</li>');
+
+      // Blockquote
+      html = html.replace(/^&gt; (.+)$/gm,
+        '<blockquote style="border-left:3px solid var(--accent);padding-left:12px;color:var(--text-muted);margin:8px 0">$1</blockquote>');
+
+      // Paragraphs – double newline
+      html = html.replace(/\n\n+/g, '</p><p style="margin:6px 0">');
+
+      // Single newlines
+      html = html.replace(/\n/g, '<br>');
+
+      return `<p style="margin:0">${html}</p>`;
+    }
+  </script>
+</body>
+
+</html>
